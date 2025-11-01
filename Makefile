@@ -17,10 +17,26 @@ stream-debug-logs:
 	echo "Run this command to view debug logs: tail -f Output/debug-log.txt"
 	docker run --privileged -it -v /dev/bus/usb:/dev/bus/usb -v "$$(pwd)/Output":/project/Output uberi/qorvo-nrf52833-board /usr/local/JLink_Linux_V792n_x86_64/JLinkRTTLogger -Device NRF52833_XXAA -if SWD -Speed 4000 -RTTChannel 0 /project/Output/debug-log.txt
 
+# list all connected DWM3001CDK devices
+list-devices:
+	@echo "Available DWM3001CDK devices:"; \
+	ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | while read -r dev; do \
+		if udevadm info -a -n $$dev | grep -q 'ATTRS{idVendor}=="1915"' && udevadm info -a -n $$dev | grep -q 'ATTRS{idProduct}=="520f"'; then \
+			SERIAL=$$(udevadm info -a -n $$dev | grep 'ATTRS{serial}' | head -1 | cut -d'"' -f2); \
+			echo "  $$dev (Serial: $$SERIAL)"; \
+		fi; \
+	done || echo "  No DWM3001CDK devices found"
+
 # auto-detect the DWM3001CDK's UART and open a minicom terminal connected to that UART, communicating via USB and the on-board SEGGER J-Link
+# Usage: make serial-terminal [DEVICE=/dev/ttyUSBX] - if DEVICE is not specified, auto-detect the first available device
 serial-terminal:
-	DEVICE_FILE=$$(ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | while read -r dev; do if udevadm info -a -n $$dev | grep -q 'ATTRS{idVendor}=="1915"' && udevadm info -a -n $$dev | grep -q 'ATTRS{idProduct}=="520f"'; then echo "$$dev"; break; fi; done); \
+	if [ -n "$(DEVICE)" ]; then \
+		DEVICE_FILE=$(DEVICE); \
+	else \
+		DEVICE_FILE=$$(ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | while read -r dev; do if udevadm info -a -n $$dev | grep -q 'ATTRS{idVendor}=="1915"' && udevadm info -a -n $$dev | grep -q 'ATTRS{idProduct}=="520f"'; then echo "$$dev"; break; fi; done); \
+	fi; \
 	if [ -z "$$DEVICE_FILE" ]; then echo "Device not found"; exit 1; fi; \
+	echo "Connecting to $$DEVICE_FILE"; \
 	minicom --device $$DEVICE_FILE
 
 # open a bash shell in the development environment with all of the development tools available

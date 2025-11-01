@@ -31,6 +31,53 @@ make serial-terminal
 
 You should now see a minicom instance connected to the DWM3001CDK, try entering the "help" command to see available options.
 
+Managing Multiple Devices
+-------------------------
+
+When working with multiple DWM3001CDK boards, you'll need to specify which device to connect to. The Makefile provides tools to help with this:
+
+### List Available Devices
+
+```sh
+make list-devices
+```
+
+### Connect to a Specific Device
+
+```sh
+make serial-terminal DEVICE=/dev/ttyACM0
+```
+
+Replace `/dev/ttyACM0` with the device path you want to connect to.
+
+### Troubleshooting Permission Issues
+
+If you get a "Permission denied" error when trying to connect to a serial device:
+
+```
+minicom: cannot open /dev/ttyACM0: Permission denied
+```
+
+This happens because your user needs to be in the `dialout` group to access serial devices. Fix it by:
+
+1. **Add your user to the dialout group:**
+   ```sh
+   sudo usermod -a -G dialout $USER
+   ```
+
+2. **Activate the new group membership** (choose one):
+   - **Option A:** Start a new shell with updated groups:
+     ```sh
+     newgrp dialout
+     ```
+   - **Option B:** Check if you're already in the group and restart your terminal if needed:
+     ```sh
+     groups  # Should show 'dialout' in the list
+     ```
+   - **Option C:** Log out and log back in to your system
+
+
+### Example RTPS (real time positioning system) UWB
 TODO: just found this on the Qorvo forums: One initiator, two responders setup:
 
 1. Perform the quickstart steps on three different DWM3001CDK boards, connect them both to power, and open a minicom terminal for each board.
