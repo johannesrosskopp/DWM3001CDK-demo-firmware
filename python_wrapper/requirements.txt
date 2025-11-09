@@ -1,5 +1,5 @@
 # Python Serial Data Collector Dependencies
 pyserial>=3.5
-# For future Azure IoT integration:
-# azure-iot-device>=2.12.0
-# paho-mqtt>=1.6.0
+
+# Azure IoT Hub integration (optional)
+azure-iot-device>=2.12.0

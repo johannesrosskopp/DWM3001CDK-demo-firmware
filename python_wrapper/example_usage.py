@@ -16,6 +16,7 @@ import subprocess
 import json
 import logging
 from typing import Optional, Tuple
+from azure_iot_reporter import AzureIoTReporter, is_azure_iot_available
 
 # Configuration Parameters
 BEACON1_POSITION = (0.0, 0.0)     # Beacon 1 at origin
@@ -234,17 +235,31 @@ class PositionCalculator:
 
 
 class PositioningSystem:
-    """Main positioning system coordinator"""
+    """Manages multiple devices to compute tag position"""
 
-    def __init__(self, tag_port: str, beacon1_port: str, beacon2_port: str):
+    def __init__(self, tag_port: str, beacon1_port: str, beacon2_port: str,
+                 azure_connection_string: Optional[str] = None,
+                 azure_device_id: str = "dwm3001cdk-tag"):
         self.tag_collector = DistanceCollector(tag_port)
         self.beacon1_port = beacon1_port
         self.beacon2_port = beacon2_port
+        self.calculator = PositionCalculator()
         self.beacon1_process = None
         self.beacon2_process = None
-        self.calculator = PositionCalculator(
-            BEACON1_POSITION, BEACON2_POSITION)
         self.running = False
+        
+        # Azure IoT Hub integration
+        self.azure_reporter = None
+        if azure_connection_string:
+            try:
+                if not is_azure_iot_available():
+                    logging.warning("Azure IoT SDK not installed. Install with: pip install azure-iot-device")
+                else:
+                    self.azure_reporter = AzureIoTReporter(azure_connection_string, azure_device_id)
+                    logging.info("Azure IoT Hub reporter initialized")
+            except Exception as e:
+                logging.error(f"Failed to initialize Azure IoT reporter: {e}")
+                self.azure_reporter = None
 
     def start(self):
         """Start all collectors and beacon processes"""
@@ -258,6 +273,21 @@ class PositioningSystem:
             f"Distance averaging window: {AVERAGING_WINDOW_SECONDS}s")
         logging.debug(f"Position report interval: {REPORT_INTERVAL_SECONDS}s")
         logging.debug("-" * 50)
+        
+        # Connect to Azure IoT Hub if configured
+        if self.azure_reporter:
+            try:
+                self.azure_reporter.connect()
+                self.azure_reporter.send_status("online", {
+                    "beacon1_position": BEACON1_POSITION,
+                    "beacon2_position": BEACON2_POSITION,
+                    "averaging_window": AVERAGING_WINDOW_SECONDS,
+                    "report_interval": REPORT_INTERVAL_SECONDS
+                })
+                logging.info("Connected to Azure IoT Hub")
+            except Exception as e:
+                logging.error(f"Failed to connect to Azure IoT Hub: {e}")
+                self.azure_reporter = None
 
         # Start beacon processes (they don't output distances, just respond to ranging)
         logging.debug("Starting beacon 1...")
@@ -290,6 +320,14 @@ class PositioningSystem:
         """Stop all collectors and processes"""
         logging.info("Stopping positioning system...")
         self.running = False
+        
+        # Send offline status to Azure IoT Hub
+        if self.azure_reporter:
+            try:
+                self.azure_reporter.send_status("offline")
+                self.azure_reporter.disconnect()
+            except Exception as e:
+                logging.error(f"Error disconnecting from Azure IoT Hub: {e}")
 
         # Stop tag collector
         self.tag_collector.stop()
@@ -340,6 +378,15 @@ class PositioningSystem:
                 count2 = self.tag_collector.get_measurement_count(2)
                 logging.info(f"[{timestamp}] Position: x={x:.3f}m, y={y:.3f}m "
                              f"(d1={dist1:.3f}m[n={count1}], d2={dist2:.3f}m[n={count2}])")
+                
+                # Send position data to Azure IoT Hub
+                if self.azure_reporter:
+                    try:
+                        self.azure_reporter.send_position_data(
+                            x, y, dist1, dist2, count1, count2
+                        )
+                    except Exception as e:
+                        logging.debug(f"Failed to send position to Azure IoT Hub: {e}")
             else:
                 logging.debug(f"[{timestamp}] Position calculation failed "
                               f"(d1={dist1:.3f}m, d2={dist2:.3f}m)")
@@ -368,6 +415,10 @@ def main():
                         help='Serial port for beacon 1 device')
     parser.add_argument('--beacon2', required=True,
                         help='Serial port for beacon 2 device')
+    parser.add_argument('--azure-connection-string',
+                        help='Azure IoT Hub device connection string')
+    parser.add_argument('--azure-device-id', default='dwm3001cdk-tag',
+                        help='Azure IoT Hub device ID (default: dwm3001cdk-tag)')
     parser.add_argument('--list-devices', '-l', action='store_true',
                         help='List available devices and exit')
     parser.add_argument('--log-level', default='INFO',
@@ -395,7 +446,13 @@ def main():
         return
 
     # Create and start positioning system
-    system = PositioningSystem(args.tag, args.beacon1, args.beacon2)
+    system = PositioningSystem(
+        args.tag, 
+        args.beacon1, 
+        args.beacon2,
+        azure_connection_string=args.azure_connection_string,
+        azure_device_id=args.azure_device_id
+    )
 
     try:
         system.start()
