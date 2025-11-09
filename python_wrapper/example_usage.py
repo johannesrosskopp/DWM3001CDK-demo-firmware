@@ -243,7 +243,7 @@ class PositioningSystem:
         self.tag_collector = DistanceCollector(tag_port)
         self.beacon1_port = beacon1_port
         self.beacon2_port = beacon2_port
-        self.calculator = PositionCalculator()
+        self.calculator = PositionCalculator(BEACON1_POSITION, BEACON2_POSITION)
         self.beacon1_process = None
         self.beacon2_process = None
         self.running = False
