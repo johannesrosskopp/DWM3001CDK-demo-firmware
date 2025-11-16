@@ -137,3 +137,18 @@ python dummy_iot_device.py \
 - `--pause N` - Pause N seconds between cycles
 - `--noise x,y` - Random noise in cm
 - `--dry-run` - Output to stdout instead of IoT Hub
+
+### Debug Streaming Data
+
+Monitor messages sent to IoT Hub in real-time:
+
+```bash
+# Install Azure IoT extension (one-time)
+az extension add --name azure-iot
+
+# Monitor all messages
+az iot hub monitor-events --hub-name YOUR_HUB_NAME
+
+# Monitor specific device
+az iot hub monitor-events --hub-name YOUR_HUB_NAME --device-id dwm3001cdk-tag
+```
