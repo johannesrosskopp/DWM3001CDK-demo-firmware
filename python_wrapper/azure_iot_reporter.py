@@ -83,7 +83,7 @@ class AzureIoTReporter:
         Returns:
             True if sent successfully, False otherwise
         """
-        if not self.connected:
+        if not self.connected or not self.client:
             logging.warning("Not connected to Azure IoT Hub, cannot send data")
             return False
         
@@ -145,7 +145,7 @@ class AzureIoTReporter:
         Returns:
             True if sent successfully, False otherwise
         """
-        if not self.connected:
+        if not self.connected or not self.client:
             logging.warning("Not connected to Azure IoT Hub, cannot send data")
             return False
         
@@ -187,7 +187,7 @@ class AzureIoTReporter:
         Returns:
             True if sent successfully, False otherwise
         """
-        if not self.connected:
+        if not self.connected or not self.client:
             return False
         
         try:
