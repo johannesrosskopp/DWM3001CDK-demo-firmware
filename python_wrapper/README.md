@@ -106,3 +106,34 @@ python example_usage.py \
   "messageId": 42
 }
 ```
+
+### Dummy IoT Device Simulator
+
+Test Azure IoT Hub integration without hardware using animated position playback.
+
+```bash
+# Dry-run (stdout only)
+python dummy_iot_device.py \
+    --keyframes "0:0.5,0.5;5:1.5,1.0;10:0.5,1.5" \
+    --dry-run
+
+# With back-and-forth, pause, and noise
+python dummy_iot_device.py \
+    --keyframes "0:0.5,0.5;5:1.5,1.0;10:0.5,1.5" \
+    --back-and-forth \
+    --pause 2 \
+    --noise 5,3 \
+    --dry-run
+
+# Send to Azure IoT Hub
+python dummy_iot_device.py \
+    --keyframes "0:0.5,0.5;5:1.5,1.0;10:0.5,1.5" \
+    --azure-connection-string "$AZURE_CONNECTION_STRING"
+```
+
+**Options:**
+- `--keyframes "t1:x1,y1;t2:x2,y2"` - Position keyframes (time in seconds, position in meters)
+- `--back-and-forth` - Play forward then backward
+- `--pause N` - Pause N seconds between cycles
+- `--noise x,y` - Random noise in cm
+- `--dry-run` - Output to stdout instead of IoT Hub
