@@ -8,5 +8,10 @@
     },
     "C_Cpp.default.compilerPath": "/usr/bin/gcc",
     "C_Cpp.default.cStandard": "c11",
-    "C_Cpp.default.cppStandard": "c++11"
+    "C_Cpp.default.cppStandard": "c++11",
+    "python.defaultInterpreterPath": "${workspaceFolder}/python_wrapper/venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/python_wrapper"
+    ]
 }
