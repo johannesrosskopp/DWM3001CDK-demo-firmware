@@ -27,4 +27,24 @@ RUN echo '#!/bin/bash\necho not running udevadm "$@"' > /usr/bin/udevadm && chmo
 # install J-Link tools, including JLink RTT Logger for viewing debug output from the J-Link transferred via SEGGER RTT
 RUN wget -q --post-data accept_license_agreement=accepted https://www.segger.com/downloads/jlink/JLink_Linux_V792n_x86_64.tgz && tar xf JLink_Linux_V792n_x86_64.tgz && rm JLink_Linux_V792n_x86_64.tgz
 
+# Create non-root user
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -s /bin/bash \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && usermod -a -G dialout $USERNAME
+
+# Set up permissions for the project directory
 WORKDIR /project
+RUN chown -R $USERNAME:$USERNAME /project
+
+# Switch to non-root user
+USER $USERNAME
+
+# Set bash as default shell
+SHELL ["/bin/bash", "-c"]
