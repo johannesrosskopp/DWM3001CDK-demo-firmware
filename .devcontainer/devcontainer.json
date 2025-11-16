@@ -8,6 +8,9 @@
 		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 		"dockerfile": "../Dockerfile"
 	},
+	"mounts": [
+		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+	],
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {},
 		"ghcr.io/devcontainers/features/python:1": {},
@@ -23,29 +26,13 @@
 			}
 		}
 	},
-	
 	// Forward USB devices for hardware access
 	"runArgs": [
 		"--privileged",
 		"--device=/dev/bus/usb:/dev/bus/usb",
-		"-v", "/dev:/dev"
+		"-v",
+		"/dev:/dev"
 	],
-	
 	// Add user to dialout group for serial access
 	"postCreateCommand": "sudo usermod -a -G dialout vscode || true"
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Uncomment the next line to run commands after the container is created.
-	// "postCreateCommand": "cat /etc/os-release",
-
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "devcontainer"
 }
